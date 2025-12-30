@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Digital Clock</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#00ffd5">
+
+
+<style>
+:root {
+  --bg: linear-gradient(135deg, #141e30, #243b55);
+  --card: rgba(255,255,255,0.15);
+  --text: #fff;
+  --accent: #00ffd5;
+}
+
+body.light {
+  --bg: linear-gradient(135deg, #e0eafc, #cfdef3);
+  --card: rgba(255,255,255,0.7);
+  --text: #111;
+  --accent: #00695c;
+}
+
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", sans-serif;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  background: var(--bg);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: 0.4s;
+}
+
+.clock {
+  background: var(--card);
+  backdrop-filter: blur(16px);
+  padding: 30px 40px;
+  border-radius: 20px;
+  color: var(--text);
+  text-align: center;
+  min-width: 340px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.time {
+  font-size: 3.2rem;
+  font-weight: 600;
+}
+
+#ampm {
+  font-size: 1.1rem;
+  color: var(--accent);
+  margin-left: 6px;
+}
+
+.date {
+  margin-top: 10px;
+  font-size: 1rem;
+  opacity: 0.9;
+}
+
+.controls {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+select, button {
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text);
+  border: 1.5px solid var(--accent);
+  font-size: 0.85rem;
+}
+
+button:hover, select:hover {
+  background: var(--accent);
+  color: #000;
+}
+
+.footer {
+  margin-top: 14px;
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+</style>
+</head>
+
+<body>
+
+<div class="clock">
+  <div class="time">
+    <span id="time">00:00:00</span>
+    <span id="ampm"></span>
+  </div>
+
+  <div class="date" id="date">Loading...</div>
+
+  <div class="controls">
+    <button onclick="toggleFormat()">12 / 24</button>
+
+    <select id="timezone" onchange="updateClock()">
+      <option value="local">Local Time</option>
+      <option value="Asia/Kathmandu">Nepal (NPT)</option>
+      <option value="UTC">UTC</option>
+      <option value="Asia/Tokyo">Tokyo</option>
+      <option value="America/New_York">New York</option>
+    </select>
+
+    <button onclick="toggleTheme()">Theme</button>
+  </div>
+
+  <div class="footer">Advanced Digital Clock</div>
+</div>
+
+<script>
+let is24Hour = true;
+
+function toggleFormat() {
+  is24Hour = !is24Hour;
+  updateClock();
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("light");
+}
+
+function getDateByZone(zone) {
+  return zone === "local"
+    ? new Date()
+    : new Date(new Date().toLocaleString("en-US", { timeZone: zone }));
+}
+
+function updateClock() {
+  const zone = document.getElementById("timezone").value;
+  const now = getDateByZone(zone);
+
+  let hours = now.getHours();
+  let minutes = now.getMinutes();
+  let seconds = now.getSeconds();
+  let ampm = "";
+
+  if (!is24Hour) {
+    ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+  }
+
+  hours = String(hours).padStart(2, "0");
+  minutes = String(minutes).padStart(2, "0");
+  seconds = String(seconds).padStart(2, "0");
+
+  document.getElementById("time").textContent =
+    `${hours}:${minutes}:${seconds}`;
+
+  document.getElementById("ampm").textContent =
+    is24Hour ? "" : ampm;
+
+  /* Nepali date if Nepal timezone selected */
+  const dateLocale =
+    zone === "Asia/Kathmandu" ? "ne-NP" : undefined;
+
+  const dateOptions = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: zone === "local" ? undefined : zone
+  };
+
+  document.getElementById("date").textContent =
+    new Intl.DateTimeFormat(dateLocale, dateOptions).format(now);
+}
+
+setInterval(updateClock, 1000);
+updateClock();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js")
+      .then(() => console.log("Service Worker Registered"))
+      .catch(err => console.log("SW Error:", err));
+  });
+}
+</script>
+
+</script>
+
+</body>
+</html>
